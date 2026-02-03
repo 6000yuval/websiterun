@@ -15,6 +15,9 @@ export const RouterContext = React.createContext<RouterContextType | undefined>(
 
 // Helper to parse pathname
 const getPageFromPath = (): Page => {
+  if (typeof window === 'undefined') {
+    return { name: "home" }; // Default for SSR
+  }
   const path = window.location.pathname;
   if (path === '/' || path === '') return { name: "home" };
 
@@ -27,25 +30,17 @@ const getPageFromPath = (): Page => {
   return { name: "home" };
 };
 
-// Helper to set path
-const setPathFromPage = (page: Page) => {
-  let path = '';
+// Helper to get path from page
+const getPathFromPage = (page: Page): string => {
   switch (page.name) {
     case 'home':
-      path = '/';
-      break;
+      return '/';
     case 'article':
-      path = `/article/${page.id}`;
-      break;
+      return `/article/${page.id}`;
     case 'category':
-      path = `/category/${page.id}`;
-      break;
+      return `/category/${page.id}`;
     case 'glossary':
-      path = page.term ? `/glossary/${page.term}` : '/glossary';
-      break;
-  }
-  if (window.location.pathname !== path) {
-    window.history.pushState(null, '', path);
+      return page.term ? `/glossary/${page.term}` : '/glossary';
   }
 };
 
@@ -61,22 +56,27 @@ export const RouterProvider: React.FC<{ children: React.ReactNode; initialPage?:
   const [page, setPage] = useState<Page>(initialPage || getPageFromPath());
 
   useEffect(() => {
-    // Sync URL when page changes
-    setPathFromPage(page);
-    window.scrollTo(0, 0);
-  }, [page]);
-
-  useEffect(() => {
-    // Handle browser back/forward buttons
-    const handlePopState = () => {
-      setPage(getPageFromPath());
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    // Handle browser back/forward buttons (only on client)
+    if (typeof window !== 'undefined') {
+      const handlePopState = () => {
+        setPage(getPageFromPath());
+      };
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
   }, []);
 
+  const handleNavigate = (newPage: Page) => {
+    const path = getPathFromPage(newPage);
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', path);
+      window.scrollTo(0, 0);
+    }
+    setPage(newPage);
+  };
+
   return (
-    <RouterContext.Provider value={{ page, navigate: setPage }}>
+    <RouterContext.Provider value={{ page, navigate: handleNavigate }}>
       {children}
     </RouterContext.Provider>
   );
