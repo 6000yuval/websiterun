@@ -9,5 +9,3 @@ const NavbarWrapper: React.FC = () => {
 };
 
 export default NavbarWrapper;
-
-export default NavbarWrapper;
