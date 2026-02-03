@@ -26,15 +26,15 @@ This site is optimized for search engines with:
    - `public/robots.txt` - Replace `https://your-domain.com` with your actual domain
    - `src/components/SEO.tsx` - Update canonical URLs in page components
 
-2. Submit your sitemap to Google Search Console and Bing Webmaster Tools
+2. (Optional) If you plan to integrate an external AI provider (e.g., Gemini) for server-side or advanced AI features, add the provider's API key to your environment and follow secure server-side integration practices. This app's built-in search and "AI" summarizer are local and do not require any external API key to function.
 
 ## Run Locally
 
 **Prerequisites:**  Node.js
 
-
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. Run the app:
    `npm run dev`
+
+If you intend to add an external AI service later, prefer a server-side proxy that keeps API keys secret; do not embed secret keys in client code or commit them to the repository.
