@@ -1,0 +1,64 @@
+{
+  "name": "ai-hebrew-guide",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && react-snap",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "fuse.js": "7.0.0",
+    "lucide-react": "0.344.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-helmet-async": "2.0.4",
+    "react-markdown": "9.0.1",
+    "react-router-dom": "^6.30.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "react-snap": "^1.23.0",
+    "typescript": "~5.8.2",
+    "vite": "^7.3.1"
+  },
+  "reactSnap": {
+    "crawl": false,
+    "source": "dist",
+    "destination": "dist",
+    "include": [
+      "/",
+      "/category/basics",
+      "/category/skills",
+      "/category/thinking",
+      "/category/reliability",
+      "/category/personal",
+      "/category/work",
+      "/category/automation",
+      "/category/safety",
+      "/category/master",
+      "/article/jobs-disappearing-2030",
+      "/article/is-ai-dangerous",
+      "/article/save-10-hours-a-week",
+      "/article/ai-danger-humanity",
+      "/article/ai-save-time-weekly",
+      "/article/ai-replacement-reality",
+      "/article/how-chatgpt-works-simple",
+      "/article/ai-confidence-errors",
+      "/article/persona-technique",
+      "/article/chain-of-thought",
+      "/article/human-ai-interaction-guide",
+      "/article/why-be-polite",
+      "/article/ai-finance-ops",
+      "/article/ai-sales-marketing-ops",
+      "/glossary"
+    ],
+    "minifyHtml": {
+      "collapseWhitespace": true,
+      "removeComments": true
+    }
+  }
+}
