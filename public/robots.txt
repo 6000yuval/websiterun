@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://your-vercel-domain.vercel.app/sitemap.xml
+Sitemap: https://websiterun-e3o05vcq3-yuvals-projects-309a3002.vercel.app/sitemap.xml
+Host: websiterun-e3o05vcq3-yuvals-projects-309a3002.vercel.app
