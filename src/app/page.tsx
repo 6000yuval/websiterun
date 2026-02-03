@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { CATEGORIES } from '../../data/content';
+import { CATEGORIES } from '../data/content';
 
 export default function HomePage() {
   return (
