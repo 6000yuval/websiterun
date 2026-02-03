@@ -61,10 +61,10 @@ const SearchModal: React.FC = () => {
     setAiResponse('');
     
     try {
-      const apiKey = process.env.API_KEY;
+      const apiKey = process.env.GEMINI_API_KEY;
       
       if (!apiKey) {
-        setAiResponse("שגיאה: מפתח ה-API לא נמצא. המערכת דורשת process.env.API_KEY.");
+        setAiResponse("שגיאה: מפתח ה-API לא נמצא. המערכת דורשת process.env.GEMINI_API_KEY.");
         setIsAiLoading(false);
         return;
       }
