@@ -34,13 +34,21 @@ const getPageFromUrl = (url: string): Page => {
 export const render = (url: string) => {
   const initialPage: Page = getPageFromUrl(url);
 
+  // Collect helmet data during server render
+  const helmetContext: { helmet?: any } = {};
+
   const html = renderToString(
-    <HelmetProvider>
+    <HelmetProvider context={helmetContext}>
       <RouterProvider initialPage={initialPage}>
         <App />
       </RouterProvider>
     </HelmetProvider>
   );
 
-  return { html };
+  // Compose head markup from helmet if present (title/meta/link/etc)
+  const head = helmetContext.helmet
+    ? `${helmetContext.helmet.title.toString() || ''}${helmetContext.helmet.meta.toString() || ''}${helmetContext.helmet.link.toString() || ''}`
+    : '';
+
+  return { html, head };
 };
