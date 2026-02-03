@@ -1,11 +1,12 @@
+"use client";
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearch } from '../contexts/SearchContext';
 import { ARTICLES, GLOSSARY } from '../data/content';
-import { Search, X, ChevronLeft, Sparkles, BookOpen, AlertCircle, Loader2 } from 'lucide-react';
+import { Search, X, ChevronLeft, Sparkles, BookOpen, AlertCircle } from 'lucide-react';
 import { useRouter } from '../contexts/RouterContext';
 import Fuse from 'fuse.js';
 import ReactMarkdown from 'react-markdown';
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const SearchModal: React.FC = () => {
   const { isOpen, closeSearch } = useSearch();
@@ -55,65 +56,69 @@ const SearchModal: React.FC = () => {
     closeSearch();
   };
 
+  // Local non-AI fallback: build a helpful summary from site content and glossary.
   const handleAiAsk = async () => {
     if (!query.trim()) return;
     setIsAiLoading(true);
     setAiResponse('');
-    
-    try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      
-      if (!apiKey) {
-        setAiResponse("שגיאה: מפתח ה-API לא נמצא. המערכת דורשת process.env.GEMINI_API_KEY.");
-        setIsAiLoading(false);
-        return;
-      }
 
-      const ai = new GoogleGenerativeAI({ apiKey });
+    // Simulate a short "thinking" delay for UX
+    await new Promise((r) => setTimeout(r, 500));
 
-      // Build context from site content for RAG-like experience
-      const siteContext = ARTICLES.map(a => `- ${a.title}: ${a.description}`).join('\n');
-      const glossaryContext = GLOSSARY.map(g => `- ${g.term}: ${g.definition}`).join('\n');
-      
-      const systemInstruction = `
-        אתה עוזר חכם ומומחה באתר "AI בעברית". 
-        המטרה שלך היא לענות לשאלות משתמשים על בינה מלאכותית בהתבסס אך ורק על תוכן האתר.
-        
-        הנה רשימת המאמרים באתר והתקציר שלהם:
-        ${siteContext}
+    // Gather top matches
+    const topArticles = searchResults.filter(r => (r as any).type === 'article') as any[];
+    const topGlossary = searchResults.filter(r => (r as any).type === 'glossary') as any[];
 
-        הנה מילון המושגים באתר:
-        ${glossaryContext}
+    // Additionally search glossary directly for partial matches
+    const glossaryMatches = GLOSSARY.filter(g => {
+      const q = query.toLowerCase();
+      return g.term.toLowerCase().includes(q) || g.definition.toLowerCase().includes(q);
+    }).slice(0, 5);
 
-        הנחיות:
-        1. ענה בעברית ברורה, קצרה ומקצועית.
-        2. אם התשובה נמצאת במאמר ספציפי, ציין את שם המאמר והמלץ למשתמש לקרוא אותו.
-        3. אל תמציא מידע.
-        4. השתמש בעיצוב Markdown (בולטים, הדגשות) כדי להפוך את התשובה לקריאה.
-      `;
+    // Compose a readable markdown response
+    let parts: string[] = [];
+    parts.push('**תשובה מבוססת על חיפוש מקומי באתר (לא מופעלת על ידי מודל חיצוני)**');
+    parts.push('');
+    parts.push(`שאלתך: "${query}"`);
+    parts.push('');
 
-      const response = await ai.models.generateContentStream({
-        model: 'gemini-3-flash-preview',
-        contents: query,
-        config: {
-          systemInstruction: systemInstruction,
-          maxOutputTokens: 400,
-          temperature: 0.7,
-        }
+    if (topArticles.length > 0) {
+      parts.push('**מאמרים רלוונטיים שמצאתי:**');
+      topArticles.forEach(a => {
+        parts.push(`- **${a.title}** — ${a.description}`);
       });
-
-      for await (const chunk of response) {
-        if (chunk.text) {
-          setAiResponse(prev => prev + chunk.text);
-        }
-      }
-
-    } catch (error) {
-      console.error("AI Error:", error);
-      setAiResponse("סליחה, נתקלתי בבעיה בחיבור לשרת או בטעינת המודל.");
-    } finally {
-      setIsAiLoading(false);
+      parts.push('');
+      parts.push('אם אחד מהמאמרים מתאים, לחצו על תוצאת החיפוש כדי לעבור אליו ולקרוא בהרחבה.');
+      parts.push('');
     }
+
+    if (topGlossary.length > 0 || glossaryMatches.length > 0) {
+      const combinedGloss = [...topGlossary.map(g => g as any), ...glossaryMatches];
+      const unique = combinedGloss.reduce((acc: any[], item: any) => {
+        if (!acc.find(x => x.term === item.term)) acc.push(item);
+        return acc;
+      }, []);
+      if (unique.length > 0) {
+        parts.push('**מושגים מהיומן/מילון שעשויים לעזור:**');
+        unique.slice(0, 5).forEach((g: any) => {
+          parts.push(`- **${g.term}**: ${g.definition}`);
+        });
+        parts.push('');
+      }
+    }
+
+    if (topArticles.length === 0 && (topGlossary.length === 0 && glossaryMatches.length === 0)) {
+      parts.push('לא נמצאו תוצאות ברורות בתוכן האתר עבור שאילתה זו.');
+      parts.push('- נסה לשנות מילות חיפוש או להשתמש במונחים אחרים.');
+      parts.push('- לחץ על "תוצאות חיפוש" כדי לראות התאמות מלאות ולבחור מאמרים ידנית.');
+    } else {
+      parts.push('אם תרצה תשובה מסכמת קצרה יותר או פירוט טכני, כתוב בקצרה איזה סגנון אתה רוצה (לדוגמה: "תקציר קצר", "רשימת נקודות", או "הסבר למתחיל").');
+    }
+
+    const final = parts.join('\n');
+    setAiResponse(final);
+    setIsAiLoading(false);
+    setActiveTab('ai');
   };
 
   if (!isOpen) return null;
@@ -142,11 +147,10 @@ const SearchModal: React.FC = () => {
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 if (activeTab === 'ai') handleAiAsk();
-                // If in search tab and results exist, could navigate to first result, but strictly optional.
               }
             }}
           />
-          <button onClick={closeSearch} className="p-1 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
+          <button onClick={closeSearch} className="p-1 hover:bg-slate-100 rounded-full text-slate-400 transition-colors" aria-label="Close search">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -168,7 +172,7 @@ const SearchModal: React.FC = () => {
               className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${activeTab === 'ai' ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50/50' : 'text-slate-500 hover:bg-slate-50'}`}
             >
               <Sparkles className="w-4 h-4" />
-              שאל את ה-AI
+              שאל את ה-AI (לא-חיצוני)
             </button>
           </div>
         )}
@@ -228,26 +232,26 @@ const SearchModal: React.FC = () => {
                   <AlertCircle className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                   <p>לא נמצאו תוצאות לחיפוש זה.</p>
                   <button onClick={() => { setActiveTab('ai'); handleAiAsk(); }} className="text-purple-600 hover:underline text-sm mt-2 font-medium">
-                    נסה לשאול את ה-AI במקום &rarr;
+                    נסה סיכום מקומי במקום &rarr;
                   </button>
                 </div>
               )}
             </div>
           )}
 
-          {/* AI Tab */}
+          {/* AI Tab (local fallback) */}
           {activeTab === 'ai' && query && (
             <div className="space-y-4">
                {isAiLoading && !aiResponse ? (
                  <div className="flex flex-col items-center justify-center py-12 text-slate-400 animate-pulse">
                    <Sparkles className="w-8 h-8 mb-4 text-purple-400 animate-spin" />
-                   <p className="text-sm">חושב על התשובה...</p>
+                   <p className="text-sm">מחפש תשובות באתר...</p>
                  </div>
                ) : (
                  <div className="bg-purple-50/50 p-5 rounded-xl border border-purple-100">
                    <div className="flex items-center gap-2 text-purple-700 font-bold mb-3 text-xs uppercase tracking-wider">
                      <Sparkles className="w-4 h-4" />
-                     תשובת AI
+                     תשובת חיפוש מקומית
                    </div>
                    <div className="prose prose-sm prose-slate max-w-none">
                       <ReactMarkdown>{aiResponse}</ReactMarkdown>
@@ -257,7 +261,7 @@ const SearchModal: React.FC = () => {
                
                {!isAiLoading && aiResponse && (
                  <div className="text-[10px] text-center text-slate-400 mt-4">
-                   * התשובה מבוססת על תוכן האתר ומופקת על ידי בינה מלאכותית (Gemini). ייתכנו אי-דיוקים.
+                   * תשובה זו נוצרה באופן מקומי מתוך תוכן האתר (מאמרים ומילון). אינה מבוססת על מודל חיצוני.
                  </div>
                )}
             </div>
@@ -271,7 +275,7 @@ const SearchModal: React.FC = () => {
             <span><kbd className="bg-white border border-slate-200 rounded px-1 font-sans">Esc</kbd> לסגירה</span>
           </div>
           <div className="flex items-center gap-1">
-             מופעל ע"י <span className="font-bold text-slate-600">Google Gemini</span>
+             תוצאות מתוך האתר
           </div>
         </div>
       </div>
