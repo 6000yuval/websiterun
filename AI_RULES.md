@@ -12,8 +12,11 @@ Tech stack (short)
 - react-helmet-async for page metadata / SEO.
 - react-markdown for safe rendering of article/markdown content.
 - fuse.js for client-side fuzzy search.
-- @google/generative-ai for AI model access (Gemini) — only for approved AI workflows and with secure keys.
-- React Contexts & single-file page components under src/pages for routing and app state (App.tsx is the single place that composes pages).
+- Optional: @google/generative-ai (Gemini) — only add this when you explicitly plan to implement approved server-side AI workflows and have appropriate secrets handling and approval.
+
+Notes on optional generative-ai usage:
+- Generative model integrations (like Gemini) are optional. The site is fully functional without any external AI provider: Search and the "AI" tab operate from local site content using Fuse.js and local summarization by default.
+- If you need to add generative model capabilities, prefer server-side integrations only (see "AI / Generative models" section below). Do not add keys to client bundles.
 
 Library usage rules
 - UI & Styling
@@ -45,13 +48,16 @@ Library usage rules
 
 - Search
   - Use Fuse.js (already present) for client-side fuzzy matching. Keep search configuration (keys, thresholds) in a single place and avoid duplicating it.
+  - The app ships with a local, non-external "AI" summarizer in SearchModal that aggregates search hits and glossary matches into a readable local summary — no external API key required.
 
 - AI / Generative models
-  - Use @google/generative-ai only where explicitly approved and after considering privacy/security implications.
-  - Never commit API keys. Require GEMINI_API_KEY to be provided via environment variables and keep keys out of the repo.
-  - Prefer server-side calls for any sensitive / high-volume AI operations. If calling AI from the client (like the current SearchModal), the key must be restricted and the team must understand the risk; prefer a server-side proxy that performs the call and hides keys.
+  - Generative model integrations are optional and must be approved before inclusion.
+  - Use @google/generative-ai (Gemini) only for approved, server-side workflows where keys can be kept secret.
+  - Never commit API keys. Require any provider API key to be provided via environment variables on the server and keep keys out of the repo.
+  - Prefer server-side calls for any sensitive / high-volume AI operations. If calling AI from the client (not recommended), the key must be restricted and the team must understand the risk; prefer a server-side proxy that performs the call and hides keys.
   - Always anonymize PII and sensitive data before sending to any external AI provider. Follow the app's privacy rules (e.g., avoid sending full documents with private data unless anonymized).
   - Provide a short, explicit system instruction and context when doing RAG-style operations; limit token budgets and enforce content constraints (do not allow the model to fabricate critical facts).
+  - If you implement server-side AI, document the endpoint, required env variables (e.g., GEMINI_API_KEY), and intended rate limits and audit logs in the repo README — do not leave API key setup implicit.
 
 - Notifications & feedback
   - Use toast notifications for user-visible events (success, error, info). Prefer an existing shadcn/ui or a small, focused toast library; coordinate on which package to add if not already present.
@@ -79,6 +85,13 @@ When to escalate / get approval
 - Adding an authentication provider or a datastore.
 - Major changes to navigation (introducing react-router-dom if RouterContext is in use).
 - Adding tracking/analytics or changing data retention policies.
+
+Guidance: enabling server-side AI safely
+- Add a server endpoint (e.g., /api/ai/query) that accepts sanitized inputs, calls the provider (Gemini or other), and returns results. This keeps keys on the server and audit logging possible.
+- Rate-limit endpoints and require authentication for high-risk operations.
+- Implement an allowlist and redaction for PII in server-side input processing.
+- Log inputs/outputs for debugging but mask or redact PII before storage.
+- Make server-side integration optional: the app should degrade gracefully to local-only behavior (SearchModal already does).
 
 Contact & notes
 - If in doubt about architecture (routing, AI calls, server-side work), open an issue and tag the maintainers before implementing.
