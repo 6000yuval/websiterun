@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && next export -o out",
+    "generate": "node scripts/generate-search-index.js && node scripts/generate-sitemap.js && node scripts/generate-rss.js",
+    "build:full": "npm run build && npm run generate",
     "start": "next start"
   },
   "dependencies": {
