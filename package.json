@@ -4,11 +4,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "build:full": "vite build",
-    "prerender": "react-snap",
-    "preview": "vite preview"
+    "dev": "pnpm --prefix next-app dev",
+    "build": "pnpm --prefix next-app run build:full",
+    "build:full": "pnpm --prefix next-app run build:full",
+    "prerender": "pnpm --prefix next-app run generate",
+    "start": "pnpm --prefix next-app start"
   },
   "dependencies": {
     "fuse.js": "7.0.0",
